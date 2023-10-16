@@ -1,0 +1,42 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!21 &2100000
+Material:
+  serializedVersion: 8
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_Name: Bgolus_InteriorMapping - 2D Atlas
+  m_Shader: {fileID: 4800000, guid: 292aa4cf25c4c074b8d7b1eb762bccd6, type: 3}
+  m_ValidKeywords: []
+  m_InvalidKeywords: []
+  m_LightmapFlags: 4
+  m_EnableInstancingVariants: 0
+  m_DoubleSidedGI: 0
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
+  disabledShaderPasses: []
+  m_SavedProperties:
+    serializedVersion: 3
+    m_TexEnvs:
+    - _DirtTex:
+        m_Texture: {fileID: 2800000, guid: d97eedebb1656e04ea0d4490873e449a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _RoomTex:
+        m_Texture: {fileID: 2800000, guid: fe488f7f3f4a5b549a0294d16e9c1bce, type: 3}
+        m_Scale: {x: 10, y: 10}
+        m_Offset: {x: 0, y: 0}
+    - _WindowFrameTex:
+        m_Texture: {fileID: 2800000, guid: f3460cd2eb7fc9649afb6d6b12a9a561, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    m_Ints: []
+    m_Floats:
+    - _DirtAlpha: 0.017
+    - _WindowAlpha: 1
+    m_Colors:
+    - _Rooms: {r: 4, g: 2, b: 0, a: 0}
+    - _WindowTint: {r: 0, g: 0, b: 1, a: 1}
+  m_BuildTextureStacks: []
