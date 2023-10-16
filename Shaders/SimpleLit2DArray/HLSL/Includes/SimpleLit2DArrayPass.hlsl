@@ -57,27 +57,24 @@ CBUFFER_START(UnityPerMaterial)
     half4 _BaseColor;
     half4 _SpecColor;
     half3 _EmissionColor;
-    float _Cutoff;
-    float _SpecularStrength;
-    float _Smoothness;
-    float _NormalStrength;
+    half _Cutoff;
     half _Surface;
 CBUFFER_END
 
 #ifdef UNITY_DOTS_INSTANCING_ENABLED
     UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
-        UNITY_DOTS_INSTANCE_PROP(float4, _BaseColor)
-        UNITY_DOTS_INSTANCE_PROP(float4, _SpecColor)
-        UNITY_DOTS_INSTANCE_PROP(float4, _EmissionColor)
-        UNITY_DOTS_INSTANCE_PROP(float4, _Cutoff)
-        UNITY_DOTS_INSTANCE_PROP(float4, _Surface)
+        UNITY_DOTS_INSTANCE_PROP(half4, _BaseColor)
+        UNITY_DOTS_INSTANCE_PROP(half4, _SpecColor)
+        UNITY_DOTS_INSTANCE_PROP(half3, _EmissionColor)
+        UNITY_DOTS_INSTANCE_PROP(half, _Cutoff)
+        UNITY_DOTS_INSTANCE_PROP(half, _Surface)
     UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
 
-    #define _BaseColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_BaseColor)
-    #define _SpecColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_SpecColor)
-    #define _EmissionColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_EmissionColor)
-    #define _Cutoff UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_Cutoff)
-    #define _Surface UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_Surface)
+    #define _BaseColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(half4 , Metadata_BaseColor)
+    #define _SpecColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(half4 , Metadata_SpecColor)
+    #define _EmissionColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(half3 , Metadata_EmissionColor)
+    #define _Cutoff UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(half , Metadata_Cutoff)
+    #define _Surface UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(half , Metadata_Surface)
 #endif
 
 half4 SampleSpecularSmoothness(
