@@ -44,20 +44,10 @@ Shader "Custom/InteriorMapping - 2D Atlas"
             #pragma shader_feature_local _NORMALMAP
             #pragma shader_feature_local_fragment _EMISSION
             #pragma shader_feature_local _RECEIVE_SHADOWS_OFF
-            // #pragma shader_feature_local_fragment _SURFACE_TYPE_TRANSPARENT
-            // #pragma shader_feature_local_fragment _ALPHATEST_ON
-            // #pragma shader_feature_local_fragment _ALPHAPREMULTIPLY_ON
-            // #pragma shader_feature_local_fragment _ _SPECGLOSSMAP _SPECULAR_COLOR
-            // #pragma shader_feature_local_fragment _GLOSSINESS_FROM_BASE_ALPHA
 
             // -------------------------------------
             // Universal Pipeline keywords
             #pragma multi_compile _ _MAIN_LIGHT_SHADOWS _MAIN_LIGHT_SHADOWS_CASCADE _MAIN_LIGHT_SHADOWS_SCREEN
-            // #pragma multi_compile _ _ADDITIONAL_LIGHTS_VERTEX _ADDITIONAL_LIGHTS
-            // #pragma multi_compile _ LIGHTMAP_SHADOW_MIXING
-            // #pragma multi_compile _ SHADOWS_SHADOWMASK
-            // #pragma multi_compile_fragment _ _ADDITIONAL_LIGHT_SHADOWS
-            // #pragma multi_compile_fragment _ _SHADOWS_SOFT
             #pragma multi_compile_fragment _ _LIGHT_LAYERS
             #pragma multi_compile_fragment _ _LIGHT_COOKIES
             #pragma multi_compile _ _CLUSTERED_RENDERING
@@ -77,6 +67,7 @@ Shader "Custom/InteriorMapping - 2D Atlas"
 
             #pragma vertex vert
             #pragma fragment frag
+            #define BUMP_SCALE_NOT_SUPPORTED 1
 
             #include "Includes/InteriorMappingAtlasPass.hlsl"
             

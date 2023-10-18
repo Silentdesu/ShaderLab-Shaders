@@ -14,6 +14,9 @@ Shader "Custom/SimpleLit2DArray"
         _SmoothnessSource ("Smoothness Source", Float) = 0.0
         _SpecularHighlights("Specular Highlights", Float) = 1.0
 
+        _SpecularStrength ("Specular Strength", Range(0, 1)) = 0.0
+        _NormalStrength ("Normal Strength", Range(0, 1)) = 0.5
+
         [HideInInspector] _BumpScale ("Scale", Float) = 1.0
         [NoScaleOffset] _BumpMap ("Normal Map", 2DArray) = "white" {}
 

@@ -13,6 +13,8 @@ struct appdata
     float2 uv : TEXCOORD0;
     float3 normalOS : NORMAL;
     float4 tangentOS : TANGENT;
+    float2 staticLightmapUV : TEXCOORD1;
+    float2 dynamicLightmapUV : TEXCOORD2;
 
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
@@ -34,11 +36,7 @@ struct v2f
     half3 normalWS : TEXCOORD4;
     #endif
 
-    #ifdef _ADDITIONAL_LIGHTS_VERTEX
-    half4 fogFactorAndVertexLight : TEXCOORD7;
-    #else
     half fogFactor : TEXCOORD7;
-    #endif
 
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
     float4 shadowCoord : TEXCOORD8;
@@ -46,7 +44,7 @@ struct v2f
 
     DECLARE_LIGHTMAP_OR_SH(staticLightmapUV, vertexSH, 9);
     #ifdef DYNAMICLIGHTMAP_ON
-    float2 dynamicLightmapUV : TEXCOORD9;
+    float2 dynamicLightmapUV : TEXCOORD10;
     #endif
 
     UNITY_VERTEX_INPUT_INSTANCE_ID
@@ -80,12 +78,12 @@ CBUFFER_END
 
     #define _Rooms UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float2 , Metadata_Rooms)
     #define _DirtAlpha UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_DirtAlpha)
-    #define _DirtAlpha UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_UseEmission)
-    #define _DirtAlpha UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_EmissionMultiplier)
-    #define _DirtAlpha UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_EmissionColor)
+    #define _UseEmission UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_UseEmission)
+    #define _EmissionMultiplier UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_EmissionMultiplier)
+    #define _EmissionColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_EmissionColor)
 #endif
 
-InputData createInputData(v2f i, half3 normalTS)
+InputData createInputData(const v2f i, const half3 normalTS)
 {
     InputData inputData = (InputData)0;
 
@@ -105,21 +103,16 @@ InputData createInputData(v2f i, half3 normalTS)
 
     inputData.viewDirectionWS = viewDirWS;
 
-    // #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
-    // inputData.shadowCoord = i.shadowCoord;
-    #if defined(MAIN_LIGHT_CALCULATE_SHADOWS)
+    #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+    inputData.shadowCoord = i.shadowCoord;
+    #elif defined(MAIN_LIGHT_CALCULATE_SHADOWS)
     inputData.shadowCoord = TransformWorldToShadowCoord(inputData.positionWS);
     #else
     inputData.shadowCoord = float4(0, 0, 0, 0);
     #endif
 
-    // #ifdef _ADDITIONAL_LIGHTS_VERTEX
-    // inputData.fogCoord = InitializeInputDataFog(float4(inputData.positionWS, 1.0), i.fogFactorAndVertexLight.x);
-    // inputData.vertexLighting = i.fogFactorAndVertexLight.yzw;
-    // #else
     inputData.fogCoord = InitializeInputDataFog(float4(inputData.positionWS, 1.0), i.fogFactor);
     inputData.vertexLighting = half3(0, 0, 0);
-    // #endif
 
     #if defined(DYNAMICLIGHTMAP_ON)
     inputData.bakedGI = SAMPLE_GI(i.staticLightmapUV, i.dynamicLightmapUV, i.vertexSH, inputData.normalWS);
@@ -156,22 +149,20 @@ SurfaceData createSurfaceData(const v2f i)
     #else
     const half4 albedo = SAMPLE_TEXTURE2D(_BaseMap, sampler_BaseMap, (roomIndexUV + interiorUV) / _Rooms);
     #endif
+
     #if _WINDOWFRAMEMAP
     const half4 windowFrameSample = SAMPLE_TEXTURE2D(_WindowFrameMap, sampler_WindowFrameMap, i.windowFrameUV);
     half4 outputColor = lerp(albedo, windowFrameSample, windowFrameSample.a);
     #else
     half4 outputColor = albedo;
     #endif
+
     const half4 dirtTexSample = SAMPLE_TEXTURE2D(_DirtMap, sampler_DirtMap, i.uv);
     outputColor = lerp(outputColor, dirtTexSample, _DirtAlpha);
     surfaceData.alpha = outputColor.a;
     surfaceData.albedo = outputColor.rgb;
 
-    // #ifdef _ALPHAPREMULTIPLY_ON
-    // surfaceData.albedo *= surfaceData.alpha;
-    // #endif
-
-    surfaceData.normalTS = SampleNormal(i.windowFrameUV, TEXTURE2D_ARGS(_WindowFrameMap, sampler_WindowFrameMap));
+    surfaceData.normalTS = SampleNormal(i.windowFrameUV, TEXTURE2D_ARGS(_WindowFrameNormalMap, sampler_WindowFrameNormalMap));
     surfaceData.occlusion = 1.0;
     return surfaceData;
 }
@@ -183,8 +174,8 @@ v2f vert(appdata v)
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_TRANSFER_INSTANCE_ID(v, o);
 
-    VertexPositionInputs vertexInput = GetVertexPositionInputs(v.positionOS.xyz);
-    VertexNormalInputs normalInput = GetVertexNormalInputs(v.normalOS, v.tangentOS);
+    const VertexPositionInputs vertexInput = GetVertexPositionInputs(v.positionOS.xyz);
+    const VertexNormalInputs normalInput = GetVertexNormalInputs(v.normalOS, v.tangentOS);
 
     #if defined(_FOG_FRAGMENT)
     half fogFactor = 0;
@@ -213,20 +204,15 @@ v2f vert(appdata v)
 
     OUTPUT_LIGHTMAP_UV(v.staticLightmapUV, unity_LightmapST, o.staticLightmapUV);
     #ifdef DYNAMICLIGHTMAP_ON
-    v.dynamicLightmapUV = v.dynamicLightmapUV.xy * unity_DynamicLightmapST.xy + unity_DynamicLightmapST.zw;
+    o.dynamicLightmapUV = v.dynamicLightmapUV.xy * unity_DynamicLightmapST.xy + unity_DynamicLightmapST.zw;
     #endif
     OUTPUT_SH(o.normalWS.xyz, o.vertexSH);
 
-    // #ifdef _ADDITIONAL_LIGHTS_VERTEX
-    // half3 vertexLight = VertexLighting(vertexInput.positionWS, normalInput.normalWS);
-    // o.fogFactorAndVertexLight = half4(fogFactor, vertexLight);
-    // #else
     o.fogFactor = fogFactor;
-    // #endif
 
-    // #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
-    // o.shadowCoord = GetShadowCoord(vertexInput);
-    // #endif
+    #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
+    o.shadowCoord = GetShadowCoord(vertexInput);
+    #endif
 
     return o;
 }
@@ -238,5 +224,8 @@ half4 frag(v2f i) : SV_Target
     const SurfaceData surfaceData = createSurfaceData(i);
     const InputData inputData = createInputData(i, surfaceData.normalTS);
 
-    return UniversalFragmentBlinnPhong(inputData, surfaceData);
+    half4 o = UniversalFragmentBlinnPhong(inputData, surfaceData);
+    o.rgb = MixFog(o.rgb, inputData.fogCoord);
+
+    return o;
 }
