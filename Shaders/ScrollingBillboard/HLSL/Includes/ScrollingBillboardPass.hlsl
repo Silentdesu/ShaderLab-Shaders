@@ -1,4 +1,7 @@
-﻿#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+﻿#ifndef SCROLLING_BILLBOARD_PASS_INCLUDED
+#define SCROLLING_BILLBOARD_PASS_INCLUDED
+
+#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
 
 struct appdata
 {
@@ -17,32 +20,6 @@ struct v2f
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-TEXTURE2D(_BaseMap);
-SAMPLER(sampler_BaseMap);
-
-TEXTURE2D(_ScrollMap);
-SAMPLER(sampler_ScrollMap);
-
-CBUFFER_START(UnityPerMaterial)
-    float4 _BaseMap_ST;
-    float4 _ScrollMap_ST;
-    half _ScrollY;
-    half _ScrollMapAlpha;
-    half _ScrollSpeedMultiplier;
-CBUFFER_END
-
-#ifdef UNITY_DOTS_INSTANCING_ENABLED
-    UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
-        UNITY_DOTS_INSTANCE_PROP(float, _ScrollY)
-        UNITY_DOTS_INSTANCE_PROP(float, _ScrollMapAlpha)
-        UNITY_DOTS_INSTANCE_PROP(float, _ScrollSpeedMultiplier)
-    UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
-
-    #define _ScrollY UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_ScrollY)
-    #define _ScrollMapAlpha UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_ScrollMapAlpha)
-    #define _ScrollSpeedMultiplier UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_ScrollSpeedMultiplier)
-#endif
-
 v2f vert(appdata v)
 {
     v2f o = (v2f)0;
@@ -50,7 +27,7 @@ v2f vert(appdata v)
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_TRANSFER_INSTANCE_ID(v, o);
     
-    o.vertex = TransformObjectToHClip(v.vertex);
+    o.vertex = TransformObjectToHClip(v.vertex.xyz);
     o.uv = TRANSFORM_TEX(v.uv, _BaseMap);
 
     o.noiseUV = TRANSFORM_TEX(v.uv, _ScrollMap);
@@ -74,3 +51,4 @@ half4 frag(v2f i) : SV_Target
     half3 outputColor = lerp(baseMapSample, scrollMapSample, _ScrollMapAlpha);
     return half4(outputColor, 1.0f);
 }
+#endif

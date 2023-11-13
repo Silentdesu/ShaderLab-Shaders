@@ -9,7 +9,8 @@ Material:
   m_PrefabAsset: {fileID: 0}
   m_Name: Bgolus_InteriorMapping - 2D Atlas
   m_Shader: {fileID: 4800000, guid: 292aa4cf25c4c074b8d7b1eb762bccd6, type: 3}
-  m_ValidKeywords: []
+  m_ValidKeywords:
+  - _WINDOWFRAMEMAP
   m_InvalidKeywords: []
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -20,13 +21,33 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - _BaseMap:
+        m_Texture: {fileID: 2800000, guid: 4fedb45b60aadf140851bb1446be2407, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _DirtMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _DirtTex:
         m_Texture: {fileID: 2800000, guid: d97eedebb1656e04ea0d4490873e449a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _InteriorMap:
+        m_Texture: {fileID: 2800000, guid: e181c0bc868b4a041919ff4145cf1a6d, type: 3}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _RoomTex:
         m_Texture: {fileID: 2800000, guid: fe488f7f3f4a5b549a0294d16e9c1bce, type: 3}
         m_Scale: {x: 10, y: 10}
+        m_Offset: {x: 0, y: 0}
+    - _WindowFrameMap:
+        m_Texture: {fileID: 2800000, guid: f3460cd2eb7fc9649afb6d6b12a9a561, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - _WindowFrameNormalMap:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     - _WindowFrameTex:
         m_Texture: {fileID: 2800000, guid: f3460cd2eb7fc9649afb6d6b12a9a561, type: 3}
@@ -34,9 +55,16 @@ Material:
         m_Offset: {x: 0, y: 0}
     m_Ints: []
     m_Floats:
+    - _Cull: 2
+    - _Cutoff: 0
     - _DirtAlpha: 0.017
+    - _EmissionMultiplier: 1
+    - _UseEmission: 0
+    - _UseNormalMap: 0
+    - _UseWindowFrameMap: 1
     - _WindowAlpha: 1
     m_Colors:
+    - _EmissionColor: {r: 4, g: 4, b: 4, a: 1}
     - _Rooms: {r: 4, g: 2, b: 0, a: 0}
     - _WindowTint: {r: 0, g: 0, b: 1, a: 1}
   m_BuildTextureStacks: []

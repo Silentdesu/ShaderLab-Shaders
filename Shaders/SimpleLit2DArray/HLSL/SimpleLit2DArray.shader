@@ -103,7 +103,49 @@ Shader "Custom/SimpleLit2DArray"
             #pragma vertex vert
             #pragma fragment frag
 
+            #include "Includes/SimpleLit2DArrayInput.hlsl"
             #include "Includes/SimpleLit2DArrayPass.hlsl"
+            ENDHLSL
+        }
+
+        Pass
+        {
+            Name "ShadowCaster"
+            Tags
+            {
+                "LightMode" = "ShadowCaster"
+            }
+
+            ZWrite On
+            ZTest LEqual
+            ColorMask 0
+
+            HLSLPROGRAM
+            #pragma exclude_renderers gles opengl
+            #pragma target 4.0
+
+            // -------------------------------------
+            // Material Keywords
+            #pragma shader_feature_local_fragment _ALPHATEST_ON
+            #pragma shader_feature_local_fragment _GLOSSINESS_FROM_BASE_ALPHA
+
+            //--------------------------------------
+            // GPU Instancing
+            #pragma multi_compile_instancing
+            #pragma multi_compile _ DOTS_INSTANCING_ON
+
+            // -------------------------------------
+            // Universal Pipeline keywords
+
+            // This is used during shadow map generation to differentiate between directional and punctual light shadows, as they use different formulas to apply Normal Bias
+            #pragma multi_compile_vertex _ _CASTING_PUNCTUAL_LIGHT_SHADOW
+
+            #pragma vertex ShadowPassVertex
+            #pragma fragment ShadowPassFragment
+
+            #include "Includes/SimpleLit2DArrayInput.hlsl"
+            #include "Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonMaterial.hlsl"
+            #include "Includes/ShadowCasterArrayPass.hlsl"
             ENDHLSL
         }
 
@@ -135,11 +177,11 @@ Shader "Custom/SimpleLit2DArray"
             #pragma multi_compile_instancing
             #pragma multi_compile _ DOTS_INSTANCING_ON
 
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/SimpleLitInput.hlsl"
-            #include "Packages/com.unity.render-pipelines.universal/Shaders/DepthOnlyPass.hlsl"
+            #include "Includes\\SimpleLit2DArrayInput.hlsl"
+            #include "Includes\\DepthOnlyArrayPass.hlsl"
             ENDHLSL
         }
     }
-    Fallback "Universal Render Pipeline/Simple Lit"
+    Fallback Off
     CustomEditor "Project.ShaderGUI.SimpleLit2DArray"
 }

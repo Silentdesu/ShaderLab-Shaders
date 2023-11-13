@@ -1,7 +1,7 @@
-﻿#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+﻿#ifndef SIMPLELIT_2DARRAY_PASS_INCLUDED
+#define SIMPLELIT_2DARRAY_PASS_INCLUDED
+
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceData.hlsl"
-#include "HLSLSupport.cginc"
 
 struct appdata
 {
@@ -47,88 +47,6 @@ struct v2f
     UNITY_VERTEX_OUTPUT_STEREO
 };
 
-UNITY_DECLARE_TEX2DARRAY(_BaseMap);
-UNITY_DECLARE_TEX2DARRAY(_BumpMap);
-UNITY_DECLARE_TEX2DARRAY(_SpecGlossMap);
-UNITY_DECLARE_TEX2DARRAY(_EmissionMap);
-
-CBUFFER_START(UnityPerMaterial)
-    float4 _BaseMap_ST;
-    half4 _BaseColor;
-    half4 _SpecColor;
-    half3 _EmissionColor;
-    float _Cutoff;
-    float _SpecularStrength;
-    float _Smoothness;
-    float _NormalStrength;
-    half _Surface;
-CBUFFER_END
-
-#ifdef UNITY_DOTS_INSTANCING_ENABLED
-    UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
-        UNITY_DOTS_INSTANCE_PROP(float4, _BaseColor)
-        UNITY_DOTS_INSTANCE_PROP(float4, _SpecColor)
-        UNITY_DOTS_INSTANCE_PROP(float4, _EmissionColor)
-        UNITY_DOTS_INSTANCE_PROP(float4, _Cutoff)
-        UNITY_DOTS_INSTANCE_PROP(float4, _Surface)
-    UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
-
-    #define _BaseColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_BaseColor)
-    #define _SpecColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_SpecColor)
-    #define _EmissionColor UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_EmissionColor)
-    #define _Cutoff UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_Cutoff)
-    #define _Surface UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float4 , Metadata_Surface)
-#endif
-
-half4 SampleSpecularSmoothness(
-    float3 uv,
-    half alpha,
-    half4 specColor,
-    TEXTURE2D_ARRAY_PARAM(specMap, sampler_specMap)
-)
-{
-    half4 specularSmoothness = half4(0, 0, 0, 1);
-    #ifdef _SPECGLOSSMAP
-    specularSmoothness = SAMPLE_TEXTURE2D_ARRAY(specMap, sampler_specMap, uv.xy, uv.z) * specColor;
-    #elif defined(_SPECULAR_COLOR)
-    specularSmoothness = specColor;
-    #endif
-
-    #ifdef _GLOSSINESS_FROM_BASE_ALPHA
-    specularSmoothness.a = alpha;
-    #endif
-
-    return specularSmoothness;
-}
-
-half3 SampleNormal(
-    float3 uv,
-    TEXTURE2D_ARRAY_PARAM(bumpMap, sampler_bumpMap),
-    half scale = half(1.0))
-{
-#ifdef _NORMALMAP
-    half4 n = SAMPLE_TEXTURE2D_ARRAY(bumpMap, sampler_bumpMap, uv.xy, uv.z);
-    #if BUMP_SCALE_NOT_SUPPORTED
-        return UnpackNormal(n);
-    #else
-        return UnpackNormalScale(n, scale);
-    #endif
-#else
-    return half3(0.0h, 0.0h, 1.0h);
-#endif
-}
-
-half3 SampleEmission(
-    float3 uv,
-    half3 emissionColor,
-    TEXTURE2D_ARRAY_PARAM(emissionMap, sampler_emissionMap))
-{
-#ifndef _EMISSION
-    return 0;
-#else
-    return SAMPLE_TEXTURE2D_ARRAY(emissionMap, sampler_emissionMap, uv.xy, uv.z).rgb * emissionColor;
-#endif
-}
 
 void InitializeInputData(v2f i, half3 normalTS, out InputData inputData)
 {
@@ -176,28 +94,6 @@ void InitializeInputData(v2f i, half3 normalTS, out InputData inputData)
     inputData.shadowMask = SAMPLE_SHADOWMASK(i.staticLightmapUV);
 }
 
-void InitializeSurfaceData(float3 uv, out SurfaceData outSurfaceData)
-{
-    outSurfaceData = (SurfaceData)0;
-
-    half4 albedoAlpha = UNITY_SAMPLE_TEX2DARRAY(_BaseMap, uv);
-    outSurfaceData.alpha = albedoAlpha.a * _BaseColor.a;
-    AlphaDiscard(outSurfaceData.alpha, _Cutoff);
-
-    outSurfaceData.albedo = albedoAlpha.rgb * _BaseColor.rgb;
-    #ifdef _ALPHAPREMULTIPLY_ON
-    outSurfaceData.albedo *= outSurfaceData.alpha;
-    #endif
-
-    half4 specularSmoothness = SampleSpecularSmoothness(uv, outSurfaceData.alpha, _SpecColor,
-                                                        TEXTURE2D_ARGS(_SpecGlossMap, sampler_SpecGlossMap));
-    outSurfaceData.metallic = 0.0; // unused
-    outSurfaceData.specular = specularSmoothness.rgb;
-    outSurfaceData.smoothness = specularSmoothness.a;
-    outSurfaceData.normalTS = SampleNormal(uv, TEXTURE2D_ARGS(_BumpMap, sampler_BumpMap));
-    outSurfaceData.occlusion = 1.0;
-    outSurfaceData.emission = SampleEmission(uv, _EmissionColor, TEXTURE2D_ARGS(_EmissionMap, sampler_EmissionMap));
-}
 
 v2f vert(appdata v)
 {
@@ -244,7 +140,7 @@ v2f vert(appdata v)
     #endif
 
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
-        o.shadowCoord = GetShadowCoord(vertexInput);
+    o.shadowCoord = GetShadowCoord(vertexInput);
     #endif
 
     return o;
@@ -266,3 +162,5 @@ half4 frag(v2f i) : SV_Target
     color.a = OutputAlpha(color.a, _Surface);
     return color;
 }
+
+#endif

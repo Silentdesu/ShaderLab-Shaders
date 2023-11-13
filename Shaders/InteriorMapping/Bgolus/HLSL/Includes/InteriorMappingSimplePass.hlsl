@@ -1,7 +1,8 @@
-#include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Core.hlsl"
+#ifndef INTERIOR_MAPPING_SIMPLE_PASS_INCLUDED
+#define INTERIOR_MAPPING_SIMPLE_PASS_INCLUDED
+
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceData.hlsl"
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/Lighting.hlsl"
-#include "Includes/InteriorUVFunction.hlsl"
 #include "Includes/TangentSpaceFunction.hlsl"
 
 struct appdata
@@ -10,6 +11,8 @@ struct appdata
     float2 uv : TEXCOORD0;
     float3 normalOS : NORMAL;
     float4 tangentOS : TANGENT;
+    float2 staticLightmapUV : TEXCOORD1;
+    float2 dynamicLightmapUV : TEXCOORD2;
 
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
@@ -28,7 +31,7 @@ struct v2f
     #else
     half3 normalWS : TEXCOORD4;
     #endif
-    
+
     half fogFactor : TEXCOORD7;
 
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
@@ -43,56 +46,6 @@ struct v2f
     UNITY_VERTEX_INPUT_INSTANCE_ID
 };
 
-sampler2D _RoomTex;
-sampler2D _WindowFrameTex;
-sampler2D _DirtTex;
-
-CBUFFER_START(UnityPerMaterial)
-    float4 _RoomTex_ST;
-    float4 _WindowFrameTex_ST;
-    float4 _DirtTex_ST;
-    float _RoomMaxDepth01;
-    float2 _RoomCount;
-    half _DirtAlpha;
-CBUFFER_END
-
-#ifdef UNITY_DOTS_INSTANCING_ENABLED
-    UNITY_DOTS_INSTANCING_START(MaterialPropertyMetadata)
-        UNITY_DOTS_INSTANCE_PROP(float2, _RoomCount)
-        UNITY_DOTS_INSTANCE_PROP(float, _DirtAlpha)
-        UNITY_DOTS_INSTANCE_PROP(float, _RoomMaxDepth01)
-    UNITY_DOTS_INSTANCING_END(MaterialPropertyMetadata)
-
-    #define _RoomCount UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float2 , Metadata_RoomCount)
-    #define _DirtAlpha UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_DirtAlpha)
-    #define _RoomMaxDepth01 UNITY_ACCES_DOTS_INSTANCED_PROP_FROM_MACRO(float , Metadata_RoomMaxDepth01)
-#endif
-
-SurfaceData createSurfaceData(const v2f i)
-{
-    SurfaceData o = (SurfaceData)0;
-    
-    float2 interiorUV = ConvertOriginalRawUVToInteriorUV(frac(i.uv), i.tangentViewDir, _RoomMaxDepth01);
-    interiorUV /= _RoomCount;
-    interiorUV = TRANSFORM_TEX(interiorUV, _RoomTex);
-
-    //map to differrent room if needed
-    const float2 roomIndex = floor(i.uv);
-    interiorUV += roomIndex / _RoomCount;
-
-    const half4 roomTexSample = tex2D(_RoomTex, interiorUV);
-    const half4 windowFrameTexSample = tex2D(_WindowFrameTex, i.uv);
-    const half4 dirtTexSample = tex2D(_WindowFrameTex, i.uv);
-
-    half4 albedo = lerp(roomTexSample, windowFrameTexSample.r, windowFrameTexSample.a);
-    albedo = lerp(albedo, dirtTexSample, _DirtAlpha);
-
-    o.albedo = albedo;
-    o.alpha = albedo.a;
-    o.occlusion = 1.0;
-    
-    return o;
-}
 
 InputData createInputData(const v2f i, const half3 normalTS)
 {
@@ -133,7 +86,7 @@ InputData createInputData(const v2f i, const half3 normalTS)
 
     o.normalizedScreenSpaceUV = GetNormalizedScreenSpaceUV(i.positionCS);
     o.shadowMask = SAMPLE_SHADOWMASK(i.staticLightmapUV);
-    
+
     return o;
 }
 
@@ -144,7 +97,7 @@ v2f vert(appdata v)
     UNITY_SETUP_INSTANCE_ID(v);
     UNITY_TRANSFER_INSTANCE_ID(v, o);
 
-    const VertexPositionInputs vertexInput = GetVertexPositionInputs(v.positionOS);
+    const VertexPositionInputs vertexInput = GetVertexPositionInputs(v.positionOS.xyz);
     const VertexNormalInputs normalInput = GetVertexNormalInputs(v.normalOS, v.tangentOS);
 
     #if defined(_FOG_FRAGMENT)
@@ -152,7 +105,7 @@ v2f vert(appdata v)
     #else
     half fogFactor = ComputeFogFactor(vertexInput.positionCS.z);
     #endif
-    
+
     o.uv = v.uv * _RoomCount;
     o.positionWS = vertexInput.positionWS;
     o.positionCS = vertexInput.positionCS;
@@ -180,23 +133,24 @@ v2f vert(appdata v)
     OUTPUT_SH(o.normalWS.xyz, o.vertexSH);
 
     o.fogFactor = fogFactor;
-    
+
     #if defined(REQUIRES_VERTEX_SHADOW_COORD_INTERPOLATOR)
     o.shadowCoord = GetShadowCoord(vertexInput);
     #endif
-    
+
     return o;
 }
 
 half4 frag(v2f i) : SV_Target
 {
     UNITY_SETUP_INSTANCE_ID(i);
-    
-    const SurfaceData surfaceData = createSurfaceData(i);
+
+    const SurfaceData surfaceData = createSurfaceData(i.uv, i.tangentViewDir);
     const InputData inputData = createInputData(i, surfaceData.normalTS);
 
     half4 outputColor = UniversalFragmentBlinnPhong(inputData, surfaceData);
     outputColor.rgb = MixFog(outputColor.rgb, inputData.fogCoord);
-    
+
     return outputColor;
 }
+#endif
