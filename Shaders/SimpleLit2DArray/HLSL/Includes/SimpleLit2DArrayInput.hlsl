@@ -5,12 +5,11 @@
 #include "Packages/com.unity.render-pipelines.universal/ShaderLibrary/SurfaceData.hlsl"
 #include "../../../Library/SampleMaps.hlsl" // For DepthOnlyPass
 #include "../../../Library/SampleMaps2DArray.hlsl"
-#include "HLSLSupport.cginc"
 
-UNITY_DECLARE_TEX2DARRAY(_BaseMap);
-UNITY_DECLARE_TEX2DARRAY(_BumpMap);
-UNITY_DECLARE_TEX2DARRAY(_SpecGlossMap);
-UNITY_DECLARE_TEX2DARRAY(_EmissionMap);
+TEXTURE2D_ARRAY(_BaseMap); SAMPLER(sampler_BaseMap);
+TEXTURE2D_ARRAY(_BumpMap); SAMPLER(sampler_BumpMap);
+TEXTURE2D_ARRAY(_SpecGlossMap); SAMPLER(sampler_SpecGlossMap);
+TEXTURE2D_ARRAY(_EmissionMap); SAMPLER(sampler_EmissionMap);
 
 CBUFFER_START(UnityPerMaterial)
     float4 _BaseMap_ST;
@@ -44,7 +43,7 @@ void InitializeSurfaceData(float3 uv, out SurfaceData outSurfaceData)
 {
     outSurfaceData = (SurfaceData)0;
 
-    half4 albedoAlpha = UNITY_SAMPLE_TEX2DARRAY(_BaseMap, uv);
+    half4 albedoAlpha = SAMPLE_TEXTURE2D_ARRAY(_BaseMap, sampler_BaseMap, uv.xy, uv.z);
     outSurfaceData.alpha = albedoAlpha.a * _BaseColor.a;
     AlphaDiscard(outSurfaceData.alpha, _Cutoff);
 
